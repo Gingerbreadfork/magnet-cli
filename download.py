@@ -15,6 +15,10 @@ arg_parser.add_argument('-t', '--torrent', help='download from a torrent file', 
 
 args = arg_parser.parse_args()
 
+state_str = [
+    'queued', 'checking', 'downloading metadata', 'downloading', 'finished', 'seeding', 'allocating'
+    ]
+
 
 def kb_converter(rate_kb):
     if rate_kb > 1000:
@@ -51,9 +55,6 @@ def torrent_downloader(torrent):
     
     while (handle.status().state != lt.torrent_status.seeding):
         s = handle.status()
-        
-        state_str = ['queued', 'checking', 'downloading metadata', \
-                    'downloading', 'finished', 'seeding', 'allocating']
         
         progress = round(s.progress * 100)
         (down_rate, down_unit) = kb_converter(s.download_rate / 1000)
@@ -110,9 +111,6 @@ def main():
 
         while (handle.status().state != lt.torrent_status.seeding):
             s = handle.status()
-            
-            state_str = ['queued', 'checking', 'downloading metadata', \
-                    'downloading', 'finished', 'seeding', 'allocating']
             
             progress = round(s.progress * 100)
             (down_rate, down_unit) = kb_converter(s.download_rate / 1000)
