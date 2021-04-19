@@ -1,9 +1,6 @@
 import libtorrent as lt
 import argparse
 
-# Display Additional Output
-verbose = True
-
 arg_parser = argparse.ArgumentParser(
     prog='magnet-cli',
     usage='%(prog)s -m magnet_link',
@@ -12,11 +9,17 @@ arg_parser = argparse.ArgumentParser(
 
 arg_parser.add_argument('-m', '--magnet', help='download a magnet link', default=None)
 arg_parser.add_argument('-t', '--torrent', help='download from a torrent file', default=None)
+arg_parser.add_argument('-v', '--verbose', help='display additional output', action='store_true')
 
 args = arg_parser.parse_args()
 
+if args.verbose:
+    verbose = True
+else:
+    verbose = False
+
 state_str = [
-    'queued', 'checking', 'downloading metadata', 'downloading', 'finished', 'seeding', 'allocating'
+    'Queued', 'Checking', 'Downloading Metadata', 'Downloading', 'Finished', 'Seeding', 'Allocating'
     ]
 
 
@@ -29,6 +32,19 @@ def kb_converter(rate_kb):
         rate = rate_kb
         
     return (rate, unit)
+
+
+def show_progress(status):
+        progress = round(status.progress * 100)
+        (down_rate, down_unit) = kb_converter(status.download_rate / 1000)
+        (up_rate, up_unit) = kb_converter(status.upload_rate / 1000)
+        peers = status.num_peers
+        mode = state_str[status.state]
+            
+        print(
+            f"{mode}: {progress}% - 📥 {round(down_rate)} {down_unit} 📤 {round(up_rate)} {up_unit} Peers: {peers}  ",
+            end = "\r"
+            )
 
 
 def alert_handler(ses):
@@ -50,31 +66,21 @@ def torrent_downloader(torrent):
     }
 
     handle = session.add_torrent(params)
-    s = handle.status()
-    print(f"Torrent Download - {s.name}")
+    status = handle.status()
+    print(f"Downloading Torrent - {status.name}")
     
     while (handle.status().state != lt.torrent_status.seeding):
-        s = handle.status()
-        
-        progress = round(s.progress * 100)
-        (down_rate, down_unit) = kb_converter(s.download_rate / 1000)
-        (up_rate, up_unit) = kb_converter(s.upload_rate / 1000)
-        peers = s.num_peers
-        status = state_str[s.state]
-            
-        print(
-            f"{status.capitalize()}: {progress}% - 📥 {round(down_rate)} {down_unit} 📤 {round(up_rate)} {up_unit} Peers: {peers}  ",
-            end = "\r"
-            )
-        
+        status = handle.status()
+        show_progress(status)
         alert_handler(session)
 
-    print(s.status().name, 'complete')
+    print(f"Download Complete - {status.name}")
 
 
 def main():
     if args.torrent !=None:
         torrent_downloader(args.torrent)
+        raise SystemExit
     
     if args.magnet != None:
         multiple = False
@@ -110,19 +116,8 @@ def main():
             print('Downloading Metadata...', end = "\r")
 
         while (handle.status().state != lt.torrent_status.seeding):
-            s = handle.status()
-            
-            progress = round(s.progress * 100)
-            (down_rate, down_unit) = kb_converter(s.download_rate / 1000)
-            (up_rate, up_unit) = kb_converter(s.upload_rate / 1000)
-            peers = s.num_peers
-            status = state_str[s.state]
-            
-            print(
-                f"{status.capitalize()}: {progress}% - 📥 {round(down_rate)} {down_unit} 📤 {round(up_rate)} {up_unit} Peers: {peers}  ",
-                end = "\r"
-                )
-            
+            status = handle.status()
+            show_progress(status)
             alert_handler(session)
 
         if multiple == True:    

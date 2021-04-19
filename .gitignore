@@ -131,3 +131,4 @@ dmypy.json
 # Specific to this Repository
 magnets.txt
 Downloads/
+*.torrent
