@@ -14,11 +14,17 @@ def main():
     with open("magnets.txt", "r") as magnet_file:
         magnet_list = magnet_file.readlines()
 
-    print(f"Launching with {len(magnet_list)} Magnets in Queue")
+    if len(magnet_list) > 1:
+        print(f"Launching with {len(magnet_list)} Magnets in Queue")
+        multiple = True
+    else:
+        multiple = False
+
     job_counter = 1
 
     for magnet in magnet_list:
-        print(f"\nStarting Magnet #{job_counter}")
+        if multiple == True:
+            print(f"\nStarting Magnet #{job_counter}")
         magnet = magnet.strip()
         ses = lt.session()
         ses.listen_on(6881, 6891)
@@ -49,9 +55,12 @@ def main():
                 f"{status.capitalize()}: {progress}% - 📥 {round(down_rate)} {down_unit} 📤 {round(up_rate)} {up_unit} Peers: {peers}  ",
                 end = "\r"
                 )
-            
-        print(f"\nMagnet #{job_counter} Completed!")
-        job_counter = job_counter + 1
+
+        if multiple == True:    
+            print(f"\nMagnet #{job_counter} Completed!")
+            job_counter = job_counter + 1
+        else:
+            print("Download Completed")
         
 if __name__ == "__main__":
     main()
