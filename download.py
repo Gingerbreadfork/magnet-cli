@@ -75,12 +75,33 @@ def torrent_downloader(torrent):
         alert_handler(session)
 
     print(f"Download Complete - {status.name}")
+    raise SystemExit
+
+
+def magnet_downloader(magnet):
+        magnet = magnet.strip()
+        session = lt.session()
+        session.listen_on(6881, 6891)
+        params = {
+            'save_path': 'Downloads',
+            'storage_mode': lt.storage_mode_t(2),
+        }
+
+        handle = lt.add_magnet_uri(session, magnet, params)
+        session.start_dht()
+
+        while (not handle.has_metadata()):
+            print('Downloading Metadata...', end = "\r")
+
+        while (handle.status().state != lt.torrent_status.seeding):
+            status = handle.status()
+            show_progress(status)
+            alert_handler(session)
 
 
 def main():
     if args.torrent !=None:
         torrent_downloader(args.torrent)
-        raise SystemExit
     
     if args.magnet != None:
         multiple = False
@@ -101,25 +122,9 @@ def main():
     for magnet in magnet_list:
         if multiple == True:
             print(f"\nStarting Magnet #{job_counter}")
-        magnet = magnet.strip()
-        session = lt.session()
-        session.listen_on(6881, 6891)
-        params = {
-            'save_path': 'Downloads',
-            'storage_mode': lt.storage_mode_t(2),
-        }
 
-        handle = lt.add_magnet_uri(session, magnet, params)
-        session.start_dht()
-
-        while (not handle.has_metadata()):
-            print('Downloading Metadata...', end = "\r")
-
-        while (handle.status().state != lt.torrent_status.seeding):
-            status = handle.status()
-            show_progress(status)
-            alert_handler(session)
-
+        magnet_downloader(magnet)
+        
         if multiple == True:    
             print(f"\nMagnet #{job_counter} Completed")
             job_counter = job_counter + 1
