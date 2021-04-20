@@ -9,14 +9,13 @@ arg_parser = argparse.ArgumentParser(
 
 arg_parser.add_argument('-m', '--magnet', help='download a magnet link', default=None)
 arg_parser.add_argument('-t', '--torrent', help='download from a torrent file', default=None)
-arg_parser.add_argument('-v', '--verbose', help='display additional output', action='store_true')
+arg_parser.add_argument('-v', '--verbose', help='display additional output', action='store_true', default=None)
+arg_parser.add_argument('-s', '--stream', help='sequential download', action='store_true', default=None)
 
 args = arg_parser.parse_args()
 
-if args.verbose:
-    verbose = True
-else:
-    verbose = False
+verbose = False if args.verbose == None else True
+streaming = False if args.stream == None else True
 
 state_str = [
     'Queued', 'Checking', 'Downloading Metadata', 'Downloading', 'Finished', 'Seeding', 'Allocating'
@@ -66,6 +65,7 @@ def torrent_downloader(torrent):
     }
 
     handle = session.add_torrent(params)
+    handle.set_sequential_download(True) if streaming == True else False
     status = handle.status()
     print(f"Downloading Torrent - {status.name}")
     
@@ -88,11 +88,12 @@ def magnet_downloader(magnet):
         }
 
         handle = lt.add_magnet_uri(session, magnet, params)
+        handle.set_sequential_download(True) if streaming == True else False
         session.start_dht()
 
         while (not handle.has_metadata()):
             print('Downloading Metadata...', end = "\r")
-
+        
         while (handle.status().state != lt.torrent_status.seeding):
             status = handle.status()
             show_progress(status)
