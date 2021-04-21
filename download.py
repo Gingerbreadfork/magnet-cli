@@ -3,7 +3,7 @@ import argparse
 
 arg_parser = argparse.ArgumentParser(
     prog='magnet-cli',
-    usage='%(prog)s -m magnet_link',
+    usage='python3 download.py -m magnet_link',
     description='Download Magnets from the Command Line'
     )
 
@@ -12,7 +12,6 @@ arg_parser.add_argument('-t', '--torrent', help='download from a torrent file', 
 arg_parser.add_argument('-v', '--verbose', help='display additional output', action='store_true', default=None)
 arg_parser.add_argument('-s', '--stream', help='sequential download', action='store_true', default=None)
 arg_parser.add_argument('-e', '--extra', help='add extra trackers from trackers.txt', action='store_true', default=None)
-
 
 args = arg_parser.parse_args()
 
@@ -68,9 +67,9 @@ def show_progress(status):
             )
 
 
-def alert_handler(ses):
+def alert_handler(session):
     if verbose == True:
-        alerts = ses.pop_alerts()
+        alerts = session.pop_alerts()
         for alert in alerts:
             if alert.category() & lt.alert.category_t.error_notification:
                 print(alert)
