@@ -11,15 +11,33 @@ arg_parser.add_argument('-m', '--magnet', help='download a magnet link', default
 arg_parser.add_argument('-t', '--torrent', help='download from a torrent file', default=None)
 arg_parser.add_argument('-v', '--verbose', help='display additional output', action='store_true', default=None)
 arg_parser.add_argument('-s', '--stream', help='sequential download', action='store_true', default=None)
+arg_parser.add_argument('-e', '--extra', help='add extra trackers from trackers.txt', action='store_true', default=None)
+
 
 args = arg_parser.parse_args()
 
 verbose = False if args.verbose == None else True
 streaming = False if args.stream == None else True
+extra_trackers = False if args.extra == None else True
 
 state_str = [
     'Queued', 'Checking', 'Downloading Metadata', 'Downloading', 'Finished', 'Seeding', 'Allocating'
     ]
+
+def magnet_add_trackers(magnet):
+    with open("trackers.txt", "r") as tracker_file:
+        tracker_list = tracker_file.readlines()
+
+    tracker_list_prefixed = []
+    
+    for tracker in tracker_list:
+        if tracker != "\n":
+            prefixed = "&tr=" + tracker.strip()
+            tracker_list_prefixed.append(prefixed)
+
+    extended_magnet = magnet + "".join(tracker_list_prefixed)
+    
+    return extended_magnet
 
 
 def kb_converter(rate_kb):
@@ -38,8 +56,12 @@ def show_progress(status):
         (down_rate, down_unit) = kb_converter(status.download_rate / 1000)
         (up_rate, up_unit) = kb_converter(status.upload_rate / 1000)
         peers = status.num_peers
-        mode = state_str[status.state]
-            
+        try:
+            mode = state_str[status.state]
+        except IndexError:
+            print("Failed to Start Download...")
+            raise SystemExit
+
         print(
             f"{mode}: {progress}% - 📥 {round(down_rate)} {down_unit} 📤 {round(up_rate)} {up_unit} Peers: {peers}  ",
             end = "\r"
@@ -80,6 +102,10 @@ def torrent_downloader(torrent):
 
 def magnet_downloader(magnet):
         magnet = magnet.strip()
+        
+        if extra_trackers == True:
+            magnet = magnet_add_trackers(magnet)
+        
         session = lt.session()
         session.listen_on(6881, 6891)
         params = {
